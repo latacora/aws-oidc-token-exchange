@@ -1,0 +1,7 @@
+{
+  "name": "kms_jwks_endpoint",
+  "type": "module",
+  "devDependencies": {
+    "@aws-sdk/client-kms": "^3.621.0"
+  }
+}
