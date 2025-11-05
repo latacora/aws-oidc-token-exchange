@@ -111,7 +111,7 @@ curl -sS "https://token-exchange.example.com/token?audience=<your-tailscale-audi
     --aws-sigv4 aws:amz:us-east-2:execute-api \
     --user "${AWS_ACCESS_KEY_ID}:${AWS_SECRET_ACCESS_KEY}" \
     --header "x-amz-security-token: ${AWS_SESSION_TOKEN}" \
-    --header "Accept: application/json"'
+    --header "Accept: application/json"
 ```
 
 Join your tailnet via the OIDC token. Specify the same tags you used in the Tailscale configuration and provide
