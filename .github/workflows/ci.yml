@@ -1,0 +1,72 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  terraform:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check YAML files
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: check-yaml --all-files
+
+      - name: Check JSON files
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: check-json --all-files
+
+      - name: Check for trailing whitespace
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: trailing-whitespace --all-files
+
+      - name: Check for end-of-file fixer
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: end-of-file-fixer --all-files
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install Prettier
+        run: npm install -g prettier@3.3.3
+
+      - name: Check Markdown formatting
+        run: prettier --check "**/*.md"
