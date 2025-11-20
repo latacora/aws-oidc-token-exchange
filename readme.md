@@ -1,5 +1,7 @@
 ### AWS OIDC Token Exchange
 
+> **Update**: AWS has released [outbound OIDC identity providers](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_outbound.html), a built-in feature that provides similar functionality to this project. For new deployments, we recommend evaluating AWS's native solution first, as it requires no infrastructure deployment. This project remains useful if you need additional customization or are already using it in production.
+
 You can read more about the design and benefits of this solution here: https://www.latacora.com/blog/2025/11/04/aws-oidc-workload-identity/
 
 Deploys an API gateway + lambda that can be used to exchange AWS authentication for an OIDC
