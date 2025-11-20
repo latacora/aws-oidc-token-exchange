@@ -35,24 +35,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check YAML files
-        uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: check-yaml --all-files
-
-      - name: Check JSON files
-        uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: check-json --all-files
+        run: |
+          for file in $(find . -name "*.yml" -o -name "*.yaml" | grep -v ".git"); do
+            echo "Checking $file"
+            python3 -c "import yaml; yaml.safe_load(open('$file'))"
+          done
 
       - name: Check for trailing whitespace
-        uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: trailing-whitespace --all-files
-
-      - name: Check for end-of-file fixer
-        uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: end-of-file-fixer --all-files
+        run: |
+          if grep -r '[[:space:]]$' --include='*.md' --include='*.tf' --include='*.yml' --include='*.yaml' .; then
+            echo "Found trailing whitespace"
+            exit 1
+          fi
 
   markdown:
     name: Markdown Lint

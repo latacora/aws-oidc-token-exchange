@@ -1,13 +1,17 @@
 # Developer and Maintenance Guide
 
-This document is for developers and maintainers of the AWS OIDC Token Exchange project.
+This document is for developers and maintainers of the AWS OIDC Token Exchange
+project.
 
 ## Project Overview
 
-AWS OIDC Token Exchange is a Terraform-deployed infrastructure project that enables AWS workloads to obtain OIDC tokens for authentication with external services. It consists of:
+AWS OIDC Token Exchange is a Terraform-deployed infrastructure project that
+enables AWS workloads to obtain OIDC tokens for authentication with external
+services. It consists of:
 
 - **Terraform Infrastructure** (`*.tf` files) - AWS resource definitions
-- **Lambda Functions** (JavaScript in `oidc_conf_/index.js`) - Token generation and JWKS endpoints
+- **Lambda Functions** (JavaScript in `oidc_conf_/index.js`) - Token generation
+  and JWKS endpoints
 - **Documentation** - User and security documentation
 
 ## Project Structure
@@ -78,20 +82,25 @@ terraform apply -var-file=test.tfvars
 ### Token Exchange Flow
 
 1. **Request Reception**
+
    - API Gateway receives GET request with AWS SigV4 signature
    - IAM Authorizer validates credentials
    - Identity information extracted from IAM context
 
 2. **Lambda Invocation**
+
    - API Gateway invokes Lambda with identity context
-   - Lambda receives event with `requestContext.identity` populated by API Gateway
+   - Lambda receives event with `requestContext.identity` populated by API
+     Gateway
 
 3. **JWT Generation**
+
    - Header constructed with algorithm (RS256), type (JWT), and key ID
    - Payload constructed with OIDC standard claims and AWS-specific claims
    - Header and payload base64url encoded
 
 4. **Signing**
+
    - Signing input: `base64url(header).base64url(payload)`
    - KMS `Sign` API called with RSA-SHA256 algorithm
    - Signature base64url encoded
@@ -103,10 +112,12 @@ terraform apply -var-file=test.tfvars
 ### JWKS Endpoint
 
 1. **Public Key Retrieval**
+
    - KMS `GetPublicKey` API called
    - Returns DER-encoded RSA public key
 
 2. **JWK Conversion**
+
    - DER format converted to JWK format
    - Includes key type, use, algorithm, key ID, modulus, exponent
 
@@ -117,6 +128,7 @@ terraform apply -var-file=test.tfvars
 ### Discovery Endpoint
 
 1. **Metadata Generation**
+
    - Returns OIDC Discovery document
    - Includes issuer, JWKS URI, supported algorithms, claims
 
@@ -157,11 +169,13 @@ terraform apply -var-file=test.tfvars
 ### IAM Roles
 
 **Lambda Execution Role:**
+
 - CloudWatch Logs write permissions
 - KMS Sign permission
 - KMS GetPublicKey permission
 
 **Workload Roles:**
+
 - `execute-api:Invoke` permission for API Gateway
 - Restricted by AWS Organization ID (optional)
 
@@ -214,21 +228,25 @@ variable "default_audience" {
 ### Making Changes
 
 1. **Create Feature Branch**
+
    ```bash
    git checkout -b feature/my-feature
    ```
 
 2. **Edit Terraform Configuration**
+
    - Modify `*.tf` files as needed
    - Update variables if adding configuration options
    - Add outputs for new resources
 
 3. **Edit Lambda Code**
+
    - Modify `oidc_conf_/index.js`
    - Test locally if possible
    - Ensure error handling is comprehensive
 
 4. **Validate Changes**
+
    ```bash
    terraform fmt      # Format code
    terraform validate # Validate syntax
@@ -236,6 +254,7 @@ variable "default_audience" {
    ```
 
 5. **Test Deployment**
+
    ```bash
    # Deploy to test environment
    terraform apply -var-file=test.tfvars
@@ -254,6 +273,7 @@ variable "default_audience" {
    ```
 
 6. **Update Documentation**
+
    - Update README.md if user-facing changes
    - Update SECURITY.md if security implications
    - Update this file if internal changes
@@ -287,10 +307,12 @@ variable "default_audience" {
 #### Error Handling
 
 **Terraform:**
+
 - Use validation blocks for input variables
 - Add precondition/postcondition checks where appropriate
 
 **Lambda:**
+
 - Always catch and log errors
 - Return appropriate HTTP status codes
 - Don't leak sensitive information in error messages
@@ -309,6 +331,7 @@ variable "default_audience" {
 ### Prerequisites
 
 1. **AWS Account Setup**
+
    - AWS account with admin access (for initial setup)
    - AWS Organization configured (if using org-based access control)
    - Route53 hosted zone for domain
@@ -321,6 +344,7 @@ variable "default_audience" {
 ### Deployment Steps
 
 1. **Configure Variables**
+
    ```bash
    # Create tfvars file
    cat > prod.tfvars <<EOF
@@ -333,27 +357,32 @@ variable "default_audience" {
    ```
 
 2. **Initialize Terraform**
+
    ```bash
    terraform init -backend-config=prod-backend.tfvars
    ```
 
 3. **Plan Deployment**
+
    ```bash
    terraform plan -var-file=prod.tfvars -out=tfplan
    ```
 
 4. **Review Plan**
+
    - Verify resources to be created
    - Check IAM policies
    - Verify KMS key configuration
    - Check API Gateway settings
 
 5. **Apply Deployment**
+
    ```bash
    terraform apply tfplan
    ```
 
 6. **Verify Deployment**
+
    ```bash
    # Get outputs
    terraform output -json
@@ -372,12 +401,14 @@ variable "default_audience" {
 ### Post-Deployment
 
 1. **Document Configuration**
+
    - Save terraform outputs
    - Document issuer URL
    - Document access control policies
    - Share with team
 
 2. **Test Integration**
+
    - Test token exchange from workload
    - Configure OIDC consumer (e.g., Tailscale)
    - Verify token verification works
@@ -393,16 +424,19 @@ variable "default_audience" {
 ### Regular Tasks
 
 #### Weekly
+
 - Review CloudWatch Logs for errors
 - Check CloudWatch metrics for anomalies
 - Monitor costs in AWS Cost Explorer
 
 #### Monthly
+
 - Review security audit logs
 - Check for AWS service updates
 - Review and update documentation
 
 #### Quarterly
+
 - Review and update IAM policies
 - Test incident response procedures
 - Review KMS key policies
@@ -410,15 +444,18 @@ variable "default_audience" {
 - Conduct security review
 
 #### Annually
+
 - Rotate KMS keys (see below)
 - Review and update disaster recovery procedures
 - Conduct comprehensive security audit
 
 ### KMS Key Rotation
 
-KMS doesn't support automatic rotation for asymmetric keys. Manual rotation process:
+KMS doesn't support automatic rotation for asymmetric keys. Manual rotation
+process:
 
 1. **Create New Key**
+
    ```bash
    # Update Terraform to create new key
    # Keep old key for transition period
@@ -426,16 +463,19 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
    ```
 
 2. **Update Lambda**
+
    ```bash
    # Lambda automatically uses new key via Terraform
    # Old tokens still valid with old key
    ```
 
 3. **Wait for Old Tokens to Expire**
+
    - Default token lifetime: varies by deployment
    - Wait at least 2x token lifetime for safety
 
 4. **Verify New JWKS**
+
    ```bash
    # Check JWKS includes new key
    curl -sS "$(terraform output -raw jwks_endpoint)" | jq '.keys[].kid'
@@ -451,24 +491,26 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
 ### Updating Lambda Code
 
 1. **Edit Code**
+
    ```bash
    # Edit oidc_conf_/index.js
    vim oidc_conf_/index.js
    ```
 
 2. **Test Locally** (if possible)
+
    ```javascript
    // Create test event
    const event = {
-     httpMethod: 'GET',
-     path: '/token',
-     queryStringParameters: { audience: 'test' },
+     httpMethod: "GET",
+     path: "/token",
+     queryStringParameters: { audience: "test" },
      requestContext: {
        identity: {
-         userArn: 'arn:aws:iam::123456789012:role/TestRole',
-         accountId: '123456789012'
-       }
-     }
+         userArn: "arn:aws:iam::123456789012:role/TestRole",
+         accountId: "123456789012",
+       },
+     },
    };
 
    // Test handler
@@ -477,6 +519,7 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
    ```
 
 3. **Deploy Update**
+
    ```bash
    # Terraform will detect code change
    terraform plan -var-file=prod.tfvars
@@ -499,6 +542,7 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
 **Symptom**: 403 error from API Gateway
 
 **Solutions**:
+
 - Verify AWS credentials: `aws sts get-caller-identity`
 - Check IAM policy allows `execute-api:Invoke`
 - Verify AWS Organization ID matches configuration
@@ -507,6 +551,7 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
 **Symptom**: 500 error from Lambda
 
 **Solutions**:
+
 - Check CloudWatch Logs for Lambda function
 - Verify KMS key policy allows Lambda to sign
 - Check Lambda has correct environment variables
@@ -517,6 +562,7 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
 **Symptom**: Relying Party can't verify tokens
 
 **Solutions**:
+
 - Verify JWKS endpoint is accessible
 - Check KMS key is active
 - Verify `kid` in token matches JWKS
@@ -528,6 +574,7 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
 **Symptom**: Unexpected AWS bills
 
 **Solutions**:
+
 - Check KMS Sign API call volume
 - Review API Gateway request volume
 - Check Lambda invocation count
@@ -539,18 +586,21 @@ KMS doesn't support automatic rotation for asymmetric keys. Manual rotation proc
 ### CloudWatch Metrics
 
 **API Gateway:**
+
 - `Count` - Total requests
 - `4XXError` - Client errors
 - `5XXError` - Server errors
 - `Latency` - Response time
 
 **Lambda:**
+
 - `Invocations` - Total invocations
 - `Errors` - Error count
 - `Duration` - Execution time
 - `Throttles` - Throttled invocations
 
 **KMS:**
+
 - `NumberOfOperations` - Total KMS operations
 - `Duration` - KMS operation time
 
@@ -606,9 +656,11 @@ fields @timestamp, @duration
 
 ### Unit Tests
 
-Currently, this project doesn't have unit tests. Recommendations for adding tests:
+Currently, this project doesn't have unit tests. Recommendations for adding
+tests:
 
 1. **Lambda Handler Tests**
+
    - Mock KMS client
    - Test JWT generation
    - Test error handling
@@ -683,11 +735,13 @@ Typical monthly costs (for moderate usage):
 ### Optimization Strategies
 
 1. **Reduce Token Requests**
+
    - Cache tokens on client side
    - Refresh proactively before expiration
    - Use longer token lifetime (balance with security)
 
 2. **Optimize Lambda**
+
    - Right-size memory allocation
    - Minimize cold starts (use provisioned concurrency if needed)
    - Optimize code for performance
